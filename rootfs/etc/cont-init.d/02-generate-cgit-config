@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv sh
+#
+# Generate the cgit config files based on the existing template on /config
+
+envsubst < /config/about.md > /usr/share/webapps/cgit/about.md
+envsubst < /config/cgitrc > /etc/cgitrc

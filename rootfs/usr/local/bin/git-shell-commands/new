@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+#
+# This command will interactively help the user creating a new Git repo
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+main() {
+	cd "$GIT_BASE_DIR" || exit 1
+
+	input "What's the name of the repository?" repo
+	if [ -z "$repo" ]; then
+		fail "The repository must have a name!"
+	fi
+
+	# Ensure the reponame is appended by a single `.git`
+	[[ "$repo" =~ \.git$ ]] && repo="${repo%".git"}"
+	repo="$repo.git"
+
+	# Don't override existing repos
+	if [ -d "$repo" ]; then
+		fail "A repository with that name already exist. Please choose another name."
+	fi
+
+	input "(optional) Set a description." desc
+	ask "Do you want it to be initialized with an empty commit?" N; local init=$?
+
+	create_repo "$repo"
+	test -n "$desc" && set_repo_desc "$repo" "$desc"
+	test "$init" -eq 0 && empty_commit "$repo"
+	status "Success! You can use ${cmd}config${reset} to change configurations in this repo later."
+	status "${bold}URL:${reset} git@${SERVER_URL}:${repo}"
+}
+
+set_repo_desc() {
+	local repo_name=$1
+	local desc=$2
+
+	echo "$desc" > "$repo_name/description"
+}
+
+empty_commit() {
+	local repo_name=$1
+
+	(
+		git clone "$repo_name" "$repo_name-tmp"
+		( cd "$repo_name-tmp" && git commit --allow-empty -m "initial commit" )
+		rm -rf "$repo_name-tmp"
+	) > /dev/null 2>&1
+
+	status "Created empty commit"
+}
+
+create_repo() {
+	local repo_name=$1
+
+	mkdir -p "$(dirname "$GIT_BASE_DIR/$repo_name")"
+	git init --bare --initial-branch=main "$repo_name" > /dev/null 2>&1
+
+	cat <<- 'HOOK' > "$repo_name/hooks/post-update"
+		#!/bin/sh
+
+		# Automatically update the last-modified metadata so cgit
+		# can easily display them in the web interface
+		agefile="$(git rev-parse --git-dir)"/info/web/last-modified
+
+		mkdir -p "$(dirname "$agefile")" &&
+		git for-each-ref \
+			--sort=-authordate --count=1 \
+			--format='%(authordate:iso8601)' \
+			>"$agefile"
+
+		# Update the git metadata so it can easily work for HTTP pulls
+		exec git update-server-info
+	HOOK
+
+	chmod +x "$repo_name/hooks/post-update"
+
+	# Run it for the first time
+	( cd "$repo_name" && hooks/post-update )
+
+	status "Repository '$repo_name' created"
+}
+
+main "$@"

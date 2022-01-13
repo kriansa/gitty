@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+#
+# This script downloads the latest SSH key and puts into the authorized_keys
+#
+# This should be a cron task.
+
+# Imports the container env var file
+# shellcheck disable=SC1091
+test -r /var/run/env && source /var/run/env
+
+test -z "$AUTO_PULL_SSH_KEYS" && exit
+
+# The --test flag won't print out the error message into the authorized_keys
+# file in case the request fails.
+curl --fail --silent --show-error --output "/config/ssh_authorized_keys" "$AUTO_PULL_SSH_KEYS"

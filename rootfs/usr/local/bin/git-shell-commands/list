@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+#
+# This command will simply show all existing repositories
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+main() {
+	cd "$GIT_BASE_DIR" || exit 1
+	echo "${bold}List of repos in this server:${reset}"
+
+	count=$(find . -type d -iname "*.git" | wc -l)
+	if [ "$count" -eq 0 ]; then
+		status "No repository found. Create one using ${cmd}new${reset} or ${cmd}mirror${reset}"
+		exit 1
+	else
+		find . -type d -iname "*.git" | sed -e 's|^./|  |' -e 's/\.git$//'
+	fi
+}
+
+main "$@"

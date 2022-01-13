@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+#
+# This command will interactively help the user creating a new Git repo mirror
+#
+# Requires jq
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+main() {
+	cd "$GIT_BASE_DIR" || exit 1
+
+	input "What's the URL of the repository?" repo
+	if ! validate_url "$repo"; then
+		fail "You must type in a URL!"
+	fi
+
+	local dest_path; dest_path=$(get_repo_dest_dir "$repo")
+	if [ -d "$dest_path" ]; then
+		fail "A repository already exists at this location: $dest_path"
+	fi
+
+	local repo_desc; repo_desc=$(get_repo_desc "$repo"); ret=$?
+	if [ $ret -ne 0 ]; then
+		if ask "Would you like to type in a description for this repo?" N; then
+			input "Set a description." repo_desc
+		fi
+	fi
+
+	clone_repo "$repo" "$dest_path"
+	set_repo_desc "$dest_path" "$repo_desc"
+
+	echo
+	status "Success! You can use ${cmd}config${reset} to change configurations in this repo later."
+	status "${bold}URL:${reset} git@${SERVER_URL}:${dest_path}"
+}
+
+validate_url() {
+	local url=$1
+	local regex='((https?|ssh)://|[[:alnum:]]@).*'
+
+	[[ $url =~ $regex ]]
+}
+
+get_repo_dest_dir() {
+	local url=$1
+	echo "$(get_repo_vendor "$url")/$(get_repo_path "$url").git"
+}
+
+get_repo_path() {
+	local url=$1
+	echo "$url" | sed -E -e 's#([[:alpha:]]+://)?[[:alnum:].@]+[/:]##' -e 's/\.git$//'
+}
+
+get_repo_vendor() {
+	local url=$1
+	echo "$url" \
+		| sed -E -e 's#([[:alpha:]]+://|[[:alnum:]]+@)##' -e 's#[/:].*##' \
+		| tr '[:upper:]' '[:lower:]'
+}
+
+is_repo_archived() {
+	local url=$1
+	local repo_path; repo_path=$(get_repo_path "$url")
+	local vendor; vendor=$(get_repo_vendor "$url")
+
+	if [ "$vendor" = "github.com" ]; then
+		local archived; archived="$(curl --fail --silent "https://api.github.com/repos/$repo_path" \
+			| jq -r .archived)"
+
+		test "$archived" = "true"
+
+	elif [ "$vendor" = "gitlab.com" ]; then
+		local project_id; project_id=$(printf %s "$repo_path" | jq -sRr @uri)
+		local archived; archived="$(curl --fail --silent \
+			"https://gitlab.com/api/v4/projects/$project_id" | jq -r .archived)"
+
+		test "$archived" = "true"
+	else
+		false
+	fi
+}
+
+get_repo_desc() {
+	local url=$1
+	local repo_path; repo_path=$(get_repo_path "$url")
+	local vendor; vendor=$(get_repo_vendor "$url")
+	local status=0
+
+	if [ "$vendor" = "github.com" ]; then
+		curl --fail --silent "https://api.github.com/repos/$repo_path" | jq -r .description | tr -d "\r"
+		status=$?
+
+	elif [ "$vendor" = "gitlab.com" ]; then
+		local project_id; project_id=$(printf %s "$repo_path" | jq -sRr @uri)
+		curl --fail --silent "https://gitlab.com/api/v4/projects/$project_id" | jq -r .description \
+			| tr -d "\r"
+		status=$?
+
+	else
+		echo "[mirror] $url"
+	fi
+
+	if [ $status -ne 0 ]; then
+		echo "[mirror] $url"
+		error "Unable to automatically fetch description for '$url'"
+		return 1
+	fi
+}
+
+set_repo_desc() {
+	local repo_path=$1
+	local desc=$2
+
+	echo "$desc" > "$repo_path/description"
+}
+
+clone_repo() {
+	local repo_url=$1
+	local dest_path=$2
+
+	git clone --mirror "$repo_url" "$dest_path"
+
+	# Ensure this repo does not receive pushes as it is flagged as a mirror
+	cat <<- 'HOOK' > "$dest_path/hooks/pre-receive"
+		#!/bin/sh
+		echo "This is a mirror repository, pushes are not accepted!"
+		exit 1
+	HOOK
+
+	cat <<- 'HOOK' > "$dest_path/hooks/post-mirror"
+		#!/bin/sh
+
+		# Automatically update the last-modified metadata so cgit
+		# can easily display them in the web interface
+		agefile="$(git rev-parse --git-dir)"/info/web/last-modified
+
+		mkdir -p "$(dirname "$agefile")" &&
+		git for-each-ref \
+			--sort=-authordate --count=1 \
+			--format='%(authordate:iso8601)' \
+			>"$agefile"
+
+		# Update the git metadata so it can easily work for HTTP pulls
+		exec git update-server-info
+	HOOK
+
+	chmod +x "$dest_path/hooks/post-mirror" "$dest_path/hooks/pre-receive"
+
+	# Run it for the first time
+	( cd "$dest_path" && hooks/post-mirror )
+
+	if is_repo_archived "$repo_url"; then
+		echo
+		warn "This repo is marked as archived, so it will not receive automatic updates."
+		rm "$dest_path/hooks/post-mirror"
+	fi
+}
+
+main "$@"

@@ -1,0 +1,12 @@
+#!/usr/bin/with-contenv sh
+#
+# Generate a env var file with all variables available at the container at this time, excluding all
+# the ones known to be unecessary
+#
+# Useful so this file can be simply sourced by any program that depends on the container variables
+# at runtime, such as SSH which resets its env after each client connection.
+
+echo "# Container environment variables" > /var/run/env
+
+env -u PATH -u OLDPWD -u CWD -u PWD -u HOSTNAME -u SHLVL -u HOME -u TERM | \
+	sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/=/="/' -e 's/$/"/' >> /var/run/env

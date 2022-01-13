@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# This is the help command, that is also displayed when connecting to git ssh user interactively
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+echo "${bold}Welcome to the interactive Git shell.${reset}"
+echo "You can use it to manage your repositories."
+echo ""
+echo "Available commands:"
+echo "  ${cmd}new${reset}           Create a new source Git repo"
+echo "  ${cmd}mirror${reset}        Mirrors any existing repo accessible in the web"
+echo "  ${cmd}config${reset}        Configure an existing repo"
+echo "  ${cmd}remove | rm${reset}   Delete any existing repo"
+echo "  ${cmd}list | ls${reset}     Shows a list of repos"
+echo ""
+echo "Use 'help' to show this message again."

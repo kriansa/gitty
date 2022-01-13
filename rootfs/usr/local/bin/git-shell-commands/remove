@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+#
+# Quickly remove an existing git repo
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+main() {
+	cd "$GIT_BASE_DIR" || exit 1
+
+	# First show all repos we have
+	"${0%/*}/list" || exit 1
+
+	# Disable path expansion
+	set -o noglob
+	input "Which one would you like to remove?" repo
+	repo="${repo}.git"
+
+	if [ ! -d "$repo" ]; then
+		fail "Repository not found!"
+	fi
+
+	# Remove the path iteself
+	rm -rf "${GIT_BASE_DIR:?}/$repo"
+	# Remove empty folders
+	find . -type d -not -path "*.git*" -empty -delete
+
+	status "Repository '$repo' removed successfully!"
+}
+
+main "$@"

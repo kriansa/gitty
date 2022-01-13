@@ -1,0 +1,4 @@
+#!/bin/sh
+
+exec 2>&1 # redirect stderr into stdout
+exec /usr/sbin/crond -fd8

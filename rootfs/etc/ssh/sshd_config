@@ -1,0 +1,30 @@
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+DisableForwarding yes
+
+AuthenticationMethods publickey
+ChallengeResponseAuthentication no
+HostbasedAuthentication no
+PasswordAuthentication no
+PubkeyAuthentication yes
+
+PermitTTY yes
+PermitTunnel no
+PermitUserEnvironment no
+PermitUserRC no
+PermitEmptyPasswords no
+PermitRootLogin no
+
+AllowUsers git
+
+AuthorizedKeysFile /config/ssh_authorized_keys
+HostKey /config/ssh_host_keys/ssh_host_ecdsa_key
+HostKey /config/ssh_host_keys/ssh_host_ed25519_key
+HostKey /config/ssh_host_keys/ssh_host_rsa_key
+PrintMotd no
+Banner none
+
+# Alpine builds SSH without lastlog and libpam so these aren't needed
+# PrintLastLog no
+# UsePAM no

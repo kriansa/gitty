@@ -1,0 +1,9 @@
+#!/usr/bin/execlineb -P
+
+background {
+	if { sleep 1 }
+	chmod 0666 /run/fcgiwrap.socket
+}
+
+fdmove -c 2 1 # redirect stderr into stdout
+fcgiwrap -f -s unix:/run/fcgiwrap.socket

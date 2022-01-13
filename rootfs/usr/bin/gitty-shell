@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""
+This is a very git-specific restricted shell, that can be added to /etc/shells and set to the
+pw_shell in the /etc/passwd file, to give users ability to push into repositories over ssh without
+giving them full interactive shell account.
+
+It is a Python variant of the `git-shell` program, where we simply change the path where the
+interactive commands are stored. Instead of being available at ~/git-shell-commands, they are
+expected to exist in /usr/local/bin/git-shell-commands, so we keep the user $HOME directory clean.
+
+See: https://github.com/git/git/blame/master/shell.c
+"""
+
+from cmd import Cmd
+import signal
+import os
+import sys
+import shlex
+import shutil
+import subprocess
+
+class Entrypoint():
+    """
+    Entrypoint for this program. It either executes a command if you pass it after -c or runs a
+    interactive shell if you don't pass any arguments
+    """
+
+    @staticmethod
+    def main():
+        """Entrypoint function"""
+        args = sys.argv[1:]
+        if len(args) >= 1:
+            Entrypoint.run_single_cmd(args)
+        else:
+            GitShell().cmdloop()
+
+    @staticmethod
+    def run_single_cmd(args):
+        """Parse the arguments, runs the command and display the error message when it fails"""
+        if args[0] != '-c':
+            sys.stderr.write("Run with no arguments or with -c 'cmd'\n")
+            sys.exit(1)
+
+        try:
+            CommandRunner.run(args[1:])
+        except CommandNotFoundError as error:
+            sys.stderr.write(f"Unrecognized command '{error.cmd}'\n")
+            sys.exit(1)
+
+
+class CommandNotFoundError(Exception):
+    """Raised when the called command is not found in the path"""
+    def __init__(self, cmd = None, args = None):
+        super().__init__(None)
+        self.cmd = cmd
+        self.args = args
+
+    def __str__(self):
+        return f"Command '{self.cmd}' not found!"
+
+
+class CommandRunner():
+    COMMAND_DIR = "/usr/local/bin/git-shell-commands"
+    GIT_ALLOWED_CMDS = ["git-receive-pack", "git-upload-pack", "git-upload-archive"]
+
+    @staticmethod
+    def run(cmdargs):
+        """
+        Execute a command based on a list of arguments
+
+        It either looks for an existing command in COMMAND_DIR or runs a limited subset of git
+        commands from $PATH
+        """
+        [command, *args] = cmdargs
+
+        if command in CommandRunner.GIT_ALLOWED_CMDS:
+            bin_path = shutil.which(command)
+        else:
+            bin_path = CommandRunner.command_bin_path(command)
+
+        if os.access(bin_path, os.X_OK):
+            subprocess.call([bin_path, *args])
+        else:
+            raise CommandNotFoundError(command, args)
+
+    @staticmethod
+    def run_cmdline(cmdline):
+        """Execute a string command line"""
+        CommandRunner.run(shlex.split(cmdline))
+
+    @staticmethod
+    def command_bin_path(cmd):
+        """Get the full path of a given command"""
+        basename = cmd.lstrip('/.').rstrip('/')
+        return f"{CommandRunner.COMMAND_DIR}/{basename}"
+
+    @staticmethod
+    def command_exist(command):
+        """Checks whether a given command exists"""
+        return os.access(CommandRunner.command_bin_path(command), os.X_OK)
+
+
+class GitShell(Cmd):
+    """
+    This is a interactive shell that runs commands and acts just like `git-shell`, except that
+    instead of only running commands available at ~/git-shell-commands, it runs commands available
+    at /usr/local/bin/git-shell-commands instead, leaving your $HOME clean.
+    """
+
+    prompt = "git> "
+
+    def preloop(self):
+        signal.signal(signal.SIGINT, (lambda *_: self.do_EOF(None) and sys.exit(1)))
+
+        if CommandRunner.command_exist("help"):
+            CommandRunner.run(["help"])
+
+    def do_help(self, arg):
+        """Calls the existing `help` command"""
+        self.default("help")
+
+    def emptyline(self):
+        pass
+
+    def do_exit(self, _): # pylint: disable=no-self-use
+        """Exits the interactive shell"""
+        return True
+
+    def do_EOF(self, _): # pylint: disable=invalid-name
+        """On Ctrl-D, we print a newline and follow by a normal exit"""
+        print("")
+        return self.do_exit(None)
+
+    def default(self, line):
+        try:
+            CommandRunner.run_cmdline(line)
+        except CommandNotFoundError as error:
+            sys.stderr.write(f"Unrecognized command '{error.cmd}'\n")
+
+if __name__ == '__main__':
+    Entrypoint.main()

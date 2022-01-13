@@ -1,0 +1,2 @@
+# min   hour    day     month   weekday command
+*/15    *       *       *       *       /usr/bin/git-sync

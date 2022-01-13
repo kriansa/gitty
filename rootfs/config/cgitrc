@@ -1,0 +1,59 @@
+# Main theming
+root-title=${CGIT_TITLE}
+root-desc=${CGIT_DESC}
+clone-prefix=http://${SERVER_URL} git@${SERVER_URL}
+
+# Uncomment if you want to customize cgit style
+# css=/config/cgit/cgit.css
+# logo=/config/cgit/cgit.png
+# favicon=/config/cgit/favicon.ico
+
+# File `about.md` is processed and automatically moved to the location below
+root-readme=/usr/share/webapps/cgit/about.md
+
+source-filter=/usr/lib/cgit/filters/syntax-highlighting.py
+about-filter=/usr/lib/cgit/filters/html-converters/md2html
+
+## Search for these files in the root of the default branch of repositories
+## for coming up with the about page:
+readme=:README.md
+readme=:readme.md
+readme=:README.mkd
+readme=:readme.mkd
+readme=:README.rst
+readme=:readme.rst
+readme=:README.html
+readme=:readme.html
+readme=:README.htm
+readme=:readme.htm
+readme=:README.txt
+readme=:readme.txt
+readme=:README
+readme=:readme
+readme=:INSTALL.md
+readme=:install.md
+readme=:INSTALL.mkd
+readme=:install.mkd
+readme=:INSTALL.rst
+readme=:install.rst
+readme=:INSTALL.html
+readme=:install.html
+readme=:INSTALL.htm
+readme=:install.htm
+readme=:INSTALL.txt
+readme=:install.txt
+readme=:INSTALL
+readme=:install
+
+enable-index-links=1
+enable-index-owner=0
+enable-commit-graph=1
+enable-git-config=1
+enable-log-linecount=1
+snapshots=tar.gz tar.xz zip
+
+section-from-path=1
+remove-suffix=1
+scan-path=/srv/git
+cache-scanrc-ttl=1
+virtual-root=/

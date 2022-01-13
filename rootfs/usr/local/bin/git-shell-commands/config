@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+#
+# Configure a specific repo
+
+# shellcheck disable=SC1091
+source "/usr/local/lib/git-shell-commands/common.sh"
+
+main() {
+	cd "$GIT_BASE_DIR" || exit 1
+
+	# Disable path expansion
+	set -o noglob
+	input "What's the repository you want to config?" repo
+	test -z "$repo" && fail "The repository must have a name!"
+	repo="${repo}.git"
+
+	if [ ! -d "$repo" ]; then
+		fail "Repository not found! Use ${cmd}list${reset} to see available repos."
+	fi
+
+	repo_path="$GIT_BASE_DIR/$repo"
+	config_desc "$repo_path"
+	config_default_branch "$repo_path"
+}
+
+config_desc() {
+	local repo_path=$1
+
+	echo "${bold}Current description:${reset}"
+	cat "$repo_path/description"
+
+	echo
+	ask "Change it?" N || return
+	input "Type in the new repo description:" desc
+	echo "$desc" > "$repo_path/description"
+	status "Description updated!"
+}
+
+config_default_branch() {
+	local repo_path=$1
+
+	echo "${bold}Current default branch:${reset} $(cut -c17- "$repo_path/HEAD")"
+
+	echo
+	ask "Change it?" N || return
+
+	echo "${bold}List of branches in this repo:${reset}"
+	find "${repo_path}/refs/heads" -type f -printf "* %f\n"
+
+	echo
+	input "Type in the new repo main branch:" branch
+	echo "ref: refs/heads/$branch" > "$repo_path/HEAD"
+
+	status "Main branch updated!"
+}
+
+main "$@"

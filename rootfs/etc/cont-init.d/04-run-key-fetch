@@ -1,0 +1,5 @@
+#!/bin/sh
+#
+# Runs key-fetch at the container startup
+
+/usr/bin/ssh-key-fetch

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+#
+# This is a small program that scans your git repos folder recursively for git repositories and then
+# sync them up with their remotes.
+#
+# Requires python3
+#
+# This should be a cron task.
+
+main() {
+	test -d /srv/git || echo "Unable to find path '/srv/git'"
+	cd /srv/git || exit 1
+
+	local start; start=$(date +%s.%N)
+	echo "Starting git sync process"
+
+	while read -r path; do
+		# We only sync git repos that contains a post-mirror hook (it's our own way to identify a
+		# mirrored repo from a normal one)
+		( test -f "$path/hooks/post-mirror" && cd "$path" && git_sync )
+	done < <(find . -name '*.git' -type d)
+
+	echo "Finished git sync process in $(time_spent "$start")"
+}
+
+git_sync() {
+	echo "Updating repo '$(basename "$(pwd)")'..."
+	local start; start=$(date +%s.%N)
+	git remote update --prune
+
+	# Unfortunately, git doesn't provide a fetch hook, so we implement our own here and we'll run it
+	test -x hooks/post-mirror && hooks/post-mirror
+
+	echo "Finished in $(time_spent "$start")"
+}
+
+time_spent() {
+	local start=$1
+
+	local end; end=$(date +%s.%N)
+	python3 -c "print('{:.2f}s'.format(${end} - ${start}))"
+}
+
+main "$@"

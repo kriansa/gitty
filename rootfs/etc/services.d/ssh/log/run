@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Prefix logs
+exec sed "s/^/[ssh] /"

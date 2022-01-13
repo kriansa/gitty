@@ -1,0 +1,39 @@
+# Contributor: Sören Tempel <soeren+alpine@soeren-tempel.net>
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+
+pkgname=cgit
+pkgver=1.2.3
+pkgrel=1
+pkgdesc="A fast webinterface for git"
+url="https://git.zx2c4.com/cgit/"
+arch="all"
+license="GPL-2.0-only"
+makedepends="openssl1.1-compat-dev zlib-dev lua5.3-dev xz"
+source="https://git.zx2c4.com/cgit/snapshot/cgit-ch/git-2-34.tar.xz"
+sha512sums="ba41747043877223af9155d9243422ab48f969fd8c55c93cbbf1d6b794fb2ac3b3516bc92c3e1783a683e5cb00f1d33190e4073e2f9f7ad71149bfa3925224b8  git-2-34.tar.xz"
+options="!check"
+builddir="$srcdir/cgit-ch/git-2-34"
+
+_makeopts="NO_ICONV=YesPlease
+	NO_GETTEXT=YesPlease
+	NO_TCLTK=YesPlease
+	NO_SVN_TESTS=YesPlease
+	NO_REGEX=NeedsStartEnd
+	LUA_PKGCONFIG=lua5.3
+	prefix=/usr"
+
+prepare() {
+	make get-git
+
+	default_prepare
+}
+
+build() {
+	make $_makeopts cgit
+}
+
+package() {
+	make $_makeopts DESTDIR="$pkgdir" \
+		CGIT_SCRIPT_PATH=/usr/share/webapps/cgit \
+		install
+}

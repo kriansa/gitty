@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# Generate all SSH keys that are not available on /config/ssh_host_keys
+
+keys="rsa dsa ecdsa ed25519"
+base_path="/config/ssh_host_keys"
+
+# Creates the directory first
+test -d "$base_path" || mkdir -p "$base_path"
+
+for keytype in $keys; do
+	key_path="${base_path}/ssh_host_${keytype}_key"
+	test -r "$key_path" && continue
+
+	echo "Generating SSH host key: $key_path"
+	ssh-keygen -qa 32 -t "$keytype" -C "" -N "" -f "$key_path"
+done
