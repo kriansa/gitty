@@ -12,7 +12,9 @@ on:
       - main
 
 env:
-  BACKEND_IMAGE: ghcr.io/kriansa/gitty
+  IMAGE_NAME: ghcr.io/kriansa/gitty
+  ALPINE_VERSION: latest
+  S6_VERSION: v2.2.0.3
 
 jobs:
   build-and-push-image:
@@ -22,7 +24,7 @@ jobs:
       - name: Set image tags
         id: image_tags
         run: |
-          TAGS="${BACKEND_IMAGE}:latest,${BACKEND_IMAGE}:sha-${GITHUB_SHA::8}"
+          TAGS="${IMAGE_NAME}:latest,${IMAGE_NAME}:sha-${GITHUB_SHA::8}"
           echo ::set-output name=tags::${TAGS}
 
       - name: Checkout
@@ -42,6 +44,8 @@ jobs:
         id: docker_build
         uses: docker/build-push-action@v2
         with:
-          context: backend
           push: true
           tags: ${{ steps.image_tags.outputs.tags }}
+          build-args: |
+            ALPINE_VERSION=${ALPINE_VERSION}
+            S6_VERSION=${S6_VERSION}

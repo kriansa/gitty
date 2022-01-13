@@ -58,11 +58,8 @@ RUN rm -rf /var/cache/apk/*
 
 FROM scratch
 
-ARG IMAGE_VERSION
-
 LABEL org.opencontainers.image.authors="Daniel Pereira <daniel@garajau.com.br>"
 LABEL org.opencontainers.image.source="https://github.com/kriansa/gitty"
-LABEL org.opencontainers.image.version=${IMAGE_VERSION}
 
 COPY --from=build-image / /
 
