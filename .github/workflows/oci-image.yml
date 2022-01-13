@@ -1,9 +1,10 @@
 ---
 name: OCI Image
 
-on: 
+on:
   push:
     paths:
+      - .github/workflows/oci-image.yml
       - Dockerfile
       - cgit-pkg
       - rootfs
