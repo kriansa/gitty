@@ -47,5 +47,5 @@ jobs:
           push: true
           tags: ${{ steps.image_tags.outputs.tags }}
           build-args: |
-            ALPINE_VERSION=${ALPINE_VERSION}
-            S6_VERSION=${S6_VERSION}
+            ALPINE_VERSION=${{ env.ALPINE_VERSION }}
+            S6_VERSION=${{ env.S6_VERSION }}
