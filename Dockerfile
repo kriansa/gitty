@@ -30,7 +30,7 @@ RUN tar xzf /tmp/s6-overlay-amd64.tar.gz -C / && rm /tmp/s6-overlay-amd64.tar.gz
 # Install needed packages
 COPY --from=build-cgit /root/cgit.apk /tmp
 RUN apk add --allow-untrusted /tmp/cgit.apk && rm /tmp/cgit.apk
-RUN apk add git openssh-server nginx fcgiwrap \
+RUN apk add tzdata git openssh-server nginx fcgiwrap \
 	gettext python3 py3-pygments py3-markdown bash \
 	jq busybox-suid curl
 RUN apk del vim
@@ -68,6 +68,7 @@ EXPOSE 22 80
 VOLUME ["/srv/git", "/config"]
 
 # Default ENV variables
+ENV TZ="Etc/UTC"
 ENV SERVER_URL="git-server-of-mine.com" 
 ENV AUTO_PULL_SSH_KEYS=""
 ENV CGIT_TITLE="My private git server"

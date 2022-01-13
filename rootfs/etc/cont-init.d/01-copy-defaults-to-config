@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# Copy default files to /config if they don't exist yet
+
+for file in /etc/defaults/*; do
+	file=$(basename "$file")
+	test -f "/config/$file" || cp -r "/etc/defaults/$file" "/config/$file"
+done

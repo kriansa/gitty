@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Generate all SSH keys that are not available on /config/ssh_host_keys
+# Generate all SSH keys that are not available at /config/ssh_host_keys
 
 keys="rsa dsa ecdsa ed25519"
 base_path="/config/ssh_host_keys"
