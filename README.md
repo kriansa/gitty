@@ -1,5 +1,7 @@
 # :arrows_clockwise: Gitty
 
+[![Build](https://github.com/kriansa/gitty/actions/workflows/oci-image.yml/badge.svg)](https://github.com/kriansa/gitty/actions/workflows/oci-image.yml)
+
 A single-user focused, container-based `git` server with HTTP/cgit web interface, SSH access and a
 shell interactive interface with sensible defaults.
 
