@@ -6,8 +6,8 @@ on:
     paths:
       - .github/workflows/oci-image.yml
       - Dockerfile
-      - cgit-pkg
-      - rootfs
+      - cgit-pkg/**
+      - rootfs/**
     branches:
       - main
 
