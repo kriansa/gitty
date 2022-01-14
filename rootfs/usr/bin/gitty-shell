@@ -42,7 +42,7 @@ class Entrypoint():
             sys.exit(1)
 
         try:
-            CommandRunner.run(args[1:])
+            CommandRunner.run_cmdline(args[1])
         except CommandNotFoundError as error:
             sys.stderr.write(f"Unrecognized command '{error.cmd}'\n")
             sys.exit(1)
