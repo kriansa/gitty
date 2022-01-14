@@ -1,0 +1,2 @@
+/config false root:root 0644 0755
+/srv/git false git:git 0644 0755
