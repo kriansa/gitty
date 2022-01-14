@@ -59,7 +59,7 @@ there. For starters, you can play with it locally using `Docker` with:
 docker run --name gps \
   --env=SERVER_URL=my-cool-git-server.com \
   --env=AUTO_PULL_SSH_KEYS=https://github.com/my-user.keys 
-  kriansa/gitty
+  ghcr.io/kriansa/gitty
 
 # Get the IP address
 docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gps
