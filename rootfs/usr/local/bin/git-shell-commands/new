@@ -44,7 +44,7 @@ empty_commit() {
 
 	(
 		git clone "$repo_name" "$repo_name-tmp"
-		( cd "$repo_name-tmp" && git commit --allow-empty -m "initial commit" )
+		( cd "$repo_name-tmp" && git commit --allow-empty -m "initial commit" && git push origin HEAD )
 		rm -rf "$repo_name-tmp"
 	) > /dev/null 2>&1
 
